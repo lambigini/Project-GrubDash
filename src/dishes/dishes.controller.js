@@ -68,7 +68,32 @@ function create(req, res, next) {
   res.status(201).json({ data: newDish });
 }
 
+function validateDishId(req, res, next) {
+  const dishId = req.params.dishId;
+  console.log("req.params.dishId ", req.params.dishId);
+  const findDish = dishes.find((dish) => dish.id === dishId);
+  if (findDish) {
+    res.locals.findDish = findDish;
+    next();
+  }
+  next({
+    status: 404,
+    message: "dish not found",
+  });
+}
+
+function read(req, res, next) {
+  //get the id from param
+  //find the id in the dish
+  // return the dish matched the id
+
+  const findDish = res.locals.findDish;
+
+  res.status(200).json({ data: findDish });
+}
+
 module.exports = {
   list,
   create: [validateDish, create],
+  read: [validateDishId, read],
 };
