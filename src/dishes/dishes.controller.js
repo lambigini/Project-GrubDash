@@ -35,7 +35,7 @@ function validateDish(req, res, next) {
       status: 400,
       message: "description",
     });
-  if (price === undefined || price <= 0)
+  if (price === undefined || price <= 0 || typeof price !== "number")
     return next({
       status: 400,
       message: "price",
@@ -78,7 +78,7 @@ function validateDishId(req, res, next) {
   }
   next({
     status: 404,
-    message: "dish not found",
+    message: `Dish does not exist: ${dishId}`,
   });
 }
 
@@ -92,55 +92,37 @@ function read(req, res, next) {
   res.status(200).json({ data: findDish });
 }
 
-function validateUpdateId(req, res, next) {
-  const { data: { id, name, description, price, image_url } = {} } = req.body;
+function dishExists(req, res, next) {
+  const dishId = req.params.dishId;
+  const foundDish = dishes.filter((dish) => dish.id === dishId);
+  if (foundDish.length > 0) {
+    res.locals.dish = foundDish;
+    next();
+  } else {
+    next({ status: 404, message: `Dish ${dishId} not found.` });
+  }
+}
+
+function isIdValid(req, res, next) {
+  let {
+    data: { id },
+  } = req.body;
+  const dishId = req.params.dishId;
   if (
-    name &&
-    description &&
-    price &&
-    Number.isInteger(price) &&
-    price > 0 &&
-    image_url
+    req.body.data.id === null ||
+    req.body.data.id === undefined ||
+    req.body.data.id === ""
   ) {
     return next();
   }
-
-  const dishId = req.params.dishId;
-  if (dishId === undefined) {
-    return next({
-      status: 404,
-      message: `Dish does not exist: $dishId}`,
-    });
-  }
-
-  if (id !== dishId) {
-    return next({
-      status: 404,
+  if (req.body.data.id !== dishId) {
+    next({
+      status: 400,
       message: `Dish id does not match route id. Dish: ${id}, Route: ${dishId}`,
     });
+  } else {
+    next();
   }
-
-  if (name === undefined || name === "")
-    return next({
-      status: 400,
-      message: "name",
-    });
-  if (description === undefined || description === "")
-    return next({
-      status: 400,
-      message: "description",
-    });
-  if (price === undefined || price <= 0)
-    return next({
-      status: 400,
-      message: "price",
-    });
-
-  if (image_url === undefined || image_url === "")
-    return next({
-      status: 400,
-      message: "image_url",
-    });
 }
 
 function update(req, res, next) {
@@ -148,37 +130,23 @@ function update(req, res, next) {
   // update the dish
   const findDish = res.locals.findDish;
 
-  // const { data: { id, name, description, image_url, price } = {} } = req.body;
   const dataFromBody = req.body.data;
 
-  // if (dataFromBody.id !== findDish.id) {
-  //   return next({
-  //     status: 400,
-  //     message: `Dish id does not match route id. Dish: ${dataFromBody.id}, Route: ${dishId}`,
-  //   });
-  // }
-  console.log("findDish,", findDish);
-  console.log("dataFromBody,", dataFromBody);
+  // if (
+  //   findDish.id != dataFromBody.id ||
+  //   findDish.name !== dataFromBody.name ||
+  //   findDish.description !== dataFromBody.description ||
+  //   findDish.image_url !== dataFromBody.image_url ||
+  //   findDish.price !== dataFromBody.price
+  // ) {
+  findDish.id = dataFromBody.id;
+  findDish.name = dataFromBody.name;
+  findDish.description = dataFromBody.description;
 
-  if (
-    findDish.id != dataFromBody.id ||
-    findDish.name !== dataFromBody.name ||
-    findDish.description !== dataFromBody.description ||
-    findDish.image_url !== dataFromBody.image_url ||
-    findDish.price !== dataFromBody.price
-  ) {
-    findDish.id = dataFromBody.id;
-    findDish.name = dataFromBody.name;
-    findDish.description = dataFromBody.description;
-    console.log(
-      " findDish.description,dataFromBody.description ",
-      findDish.description,
-      dataFromBody.description
-    );
-    findDish.image_url = dataFromBody.image_url;
-    findDish.price = dataFromBody.price;
-  }
-  console.log("findDish updated,", findDish);
+  findDish.image_url = dataFromBody.image_url;
+  findDish.price = dataFromBody.price;
+  // }
+
   res.status(200).json({ data: findDish });
 }
 
@@ -186,5 +154,5 @@ module.exports = {
   list,
   create: [validateDish, create],
   read: [validateDishId, read],
-  update: [validateUpdateId, update],
+  update: [dishExists, isIdValid, validateDish, validateDishId, update],
 };
