@@ -129,23 +129,13 @@ function update(req, res, next) {
   // find the dish matched the id
   // update the dish
   const findDish = res.locals.findDish;
-
   const dataFromBody = req.body.data;
 
-  // if (
-  //   findDish.id != dataFromBody.id ||
-  //   findDish.name !== dataFromBody.name ||
-  //   findDish.description !== dataFromBody.description ||
-  //   findDish.image_url !== dataFromBody.image_url ||
-  //   findDish.price !== dataFromBody.price
-  // ) {
   findDish.id = dataFromBody.id;
   findDish.name = dataFromBody.name;
   findDish.description = dataFromBody.description;
-
   findDish.image_url = dataFromBody.image_url;
   findDish.price = dataFromBody.price;
-  // }
 
   res.status(200).json({ data: findDish });
 }
