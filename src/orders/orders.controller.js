@@ -13,8 +13,6 @@ function list(req, res, next) {
 
 function validateOrder(req, res, next) {
   const { data: { deliverTo, mobileNumber, dishes } = {} } = req.body;
-  console.log("dishes ", dishes);
-  if (deliverTo && mobileNumber && dishes) next();
 
   if (deliverTo === undefined || deliverTo === "")
     return next({
@@ -26,26 +24,26 @@ function validateOrder(req, res, next) {
       status: 400,
       message: "mobileNumber",
     });
-  if (dishes === undefined || typeof dishes !== "array" || dishes.length === 0)
+  if (dishes === undefined || !Array.isArray(dishes) || dishes.length === 0)
     return next({
       status: 400,
       message: "dishes",
     });
-}
 
-function isDishesQuantityValid(req, res, next) {
-  const { data: { dishes } = {} } = req.body;
-  console.log("dishes ", dishes);
+  dishes.map((dish, index) => {
+    if (
+      dish.quantity === undefined ||
+      dish.quantity === 0 ||
+      !Number.isInteger(dish.quantity)
+    )
+      return next({
+        status: 400,
+        message: `dish quantity at index ${index}  invalid`,
+      });
+  });
 
-  // if (
-  //   dishes[0].quantity === undefined ||
-  //   dishes[0].quantity <= 0 || !Number.isInteger(dishes[0].quantity)
-
-  // )
-  //   return next({
-  //     status: 400,
-  //     message: `${dishes[0].quantity}`,
-  //   });
+  res.locals.order = req.body.data;
+  next();
 }
 
 function create(req, res, next) {
@@ -61,9 +59,8 @@ function create(req, res, next) {
     dishes,
   };
 
+  //   const newOrder = { ...res.locals.order, id: nextId() };
   orders.push(newOrder);
-  console.log("newOrder ", newOrder);
-  console.log("orders ", orders);
 
   res.status(201).json({ data: newOrder });
 }
