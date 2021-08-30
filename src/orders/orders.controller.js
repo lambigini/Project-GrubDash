@@ -67,7 +67,7 @@ function create(req, res, next) {
 
 function validateOrderId(req, res, next) {
   const { orderId } = req.params;
-  const findOrder = orders.find((order) => (order.id = orderId));
+  const findOrder = orders.find((order, index) => order.id === orderId);
 
   if (findOrder) {
     res.locals.findOrder = findOrder;
@@ -76,7 +76,7 @@ function validateOrderId(req, res, next) {
 
   next({
     status: 404,
-    message: "no matching order found",
+    message: `no matching order found at order ${orderId}`,
   });
 }
 
@@ -85,8 +85,33 @@ function read(req, res, next) {
   res.status(200).json({ data: findOrder });
 }
 
+function validateDestroy(req, res, next) {
+  const findOrder = res.locals.findOrder;
+
+  if (findOrder.status !== "pending")
+    next({
+      status: 400,
+      message: `An order cannot be deleted unless it is pending`,
+    });
+
+  next();
+}
+
+function destroy(req, res, next) {
+  // go to orders, look for order id match with the order provided
+  // delete the order
+  // send the response back
+  const { orderId } = req.params;
+  const index = orders.findIndex((order) => (order.id = orderId));
+
+  orders.splice(index, 1);
+
+  res.sendStatus(204);
+}
+
 module.exports = {
   list,
   create: [validateOrder, create],
   read: [validateOrderId, read],
+  destroy: [validateOrderId, validateDestroy, destroy],
 };
