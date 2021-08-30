@@ -14,6 +14,7 @@ router
   .route("/:orderId")
   .get(controller.read)
   .delete(controller.destroy)
+  .put(controller.update)
   .all(methodNotAllowed);
 
 module.exports = router;

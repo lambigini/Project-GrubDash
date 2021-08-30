@@ -109,9 +109,92 @@ function destroy(req, res, next) {
   res.sendStatus(204);
 }
 
+function validateUpdate(req, res, next) {
+  const { data: { id } = {} } = req.body;
+  const { orderId } = req.params;
+
+  if (id === null || id === undefined || id === "") {
+    return next();
+  }
+
+  console.log("id, orderId ", id, orderId);
+  if (id !== orderId)
+    next({
+      status: 400,
+      message: `Order id does not match route id. Order: ${id}, Route: ${orderId}.`,
+    });
+  else next();
+}
+
+function isStatusValid(req, res, next) {
+  const { data: { status } = {} } = req.body;
+  const { orderId } = req.params;
+
+  // if (
+  //   status === null ||
+  //   status === undefined ||
+  //   status === ""
+  // ) {
+  //   return next({
+  //     status: 400,
+  //     message: `Order must have a status of pending, preparing, out-for-delivery, delivered`
+  //   })
+  // }
+
+  if (
+    status !== ("pending" || "preparing" || "out-for-delivery" || "delivered")
+  ) {
+    next({
+      status: 400,
+      message:
+        " Order must have a status of pending, preparing, out-for-delivery, delivered.",
+    });
+  }
+
+  if (status === "delivered")
+    next({
+      status: 400,
+      message: `A delivered order cannot be changed`,
+    });
+  next();
+}
+
+function update(req, res, next) {
+  // not working with the second verified
+  // const findOrder = res.locals.findOrder;
+  // const dataFromBody = req.body.data;
+
+  // findOrder.id = dataFromBody.id;
+  // findOrder.deliverTo = dataFromBody.deliverTo;
+  // findOrder.mobileNumber = dataFromBody.mobileNumber;
+  // findOrder.status = dataFromBody.status;
+  // findOrder.dishes = dataFromBody.dishes;
+
+  // res.status(200).json({ data: findOrder });
+
+  const { orderId } = req.params;
+  const { data: { deliverTo, mobileNumber, status, dishes } = {} } = req.body;
+  const updatedOrder = {
+    id: orderId,
+    deliverTo,
+    mobileNumber,
+    status,
+    dishes,
+  };
+
+  return res.json({ data: updatedOrder });
+}
+
 module.exports = {
   list,
   create: [validateOrder, create],
   read: [validateOrderId, read],
   destroy: [validateOrderId, validateDestroy, destroy],
+  update: [
+    validateOrderId,
+    validateOrder,
+    validateUpdate,
+    isStatusValid,
+    update,
+  ],
 };
