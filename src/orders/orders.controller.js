@@ -65,7 +65,28 @@ function create(req, res, next) {
   res.status(201).json({ data: newOrder });
 }
 
+function validateOrderId(req, res, next) {
+  const { orderId } = req.params;
+  const findOrder = orders.find((order) => (order.id = orderId));
+
+  if (findOrder) {
+    res.locals.findOrder = findOrder;
+    next();
+  }
+
+  next({
+    status: 404,
+    message: "no matching order found",
+  });
+}
+
+function read(req, res, next) {
+  const findOrder = res.locals.findOrder;
+  res.status(200).json({ data: findOrder });
+}
+
 module.exports = {
   list,
   create: [validateOrder, create],
+  read: [validateOrderId, read],
 };
